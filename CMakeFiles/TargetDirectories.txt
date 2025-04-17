@@ -1,0 +1,3 @@
+/Users/tevzb/code/t4v2/CMakeFiles/t4v2.dir
+/Users/tevzb/code/t4v2/CMakeFiles/edit_cache.dir
+/Users/tevzb/code/t4v2/CMakeFiles/rebuild_cache.dir
