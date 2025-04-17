@@ -172,36 +172,36 @@ int main(int argc, char** argv) {
     //   - space ends word type, any more spaces do nothing, wait for next letter
     //   - every wrong letter is colored red / yellow , every letter after end of word as well
 
-    while (true) {
-        clear(); // Clear the screen
-        move(0, 0); // Move cursor
-        // Print words
-        int x = 0;
-        int y = 0;
-        // for (auto& w : g_words) {
-        for (int i = 0; i < 1000 && i < g_words.size(); ++i) {
-            auto& w = g_words[i];
-            x += w.size() + 1;
-            if (x > g_screenWidth) {
-                x = 0;
-                printw("\n");
-                if (++y >= g_screeHeight) {
-                    break;
-                }
+    clear(); // Clear the screen
+    move(0, 0); // Move cursor
+    // Print words
+    int x = 0;
+    int y = 0;
+    // for (auto& w : g_words) {
+    for (int i = 0; i < 1000 && i < g_words.size(); ++i) {
+        auto& w = g_words[i];
+        x += w.size() + 1;
+        if (x > g_screenWidth) {
+            x = 0;
+            printw("\n");
+            if (++y >= g_screeHeight) {
+                break;
             }
-            printw("%s ", w.data());
         }
+        printw("%s ", w.data());
+    }
 
-        // attron(COLOR_PAIR(CP_GREEN));
-        // printw("%s", "some_word");
-        // attroff(COLOR_PAIR(CP_GREEN));
+    // attron(COLOR_PAIR(CP_GREEN));
+    // printw("%s", "some_word");
+    // attroff(COLOR_PAIR(CP_GREEN));
 
-        move(0, 0); // Move cursor back to beginning
+    move(0, 0); // Move cursor back to beginning
 
+    while(true) {
         // Handle Input
         int ch = getch(); // Get user input
         switch (ch) {
-                // backspace
+            // backspace
             case KEY_BACKSPACE:
             case 127:
                 break;
@@ -210,17 +210,35 @@ int main(int argc, char** argv) {
             case '\t':
             case '\r':
                 break;
-            case ' ':
-                break;
             // quit (Control-D)
             case 4:
                 goto exitLoop;
             case 23:
+                printw("TODO:clearword");
                 // clear last word
+                break;
+            case ' ':
+                if (ch == inch()) {
+                    addch(ch | COLOR_PAIR(CP_GREEN));
+                }
+                else {
+                    // TODO: skip until space
+                    // getyx(stdscr, y, x);
+                    // move(y, x + 1);
+                }
                 break;
             // other chars
             default:
-                // TODO type
+                if (ch == inch()) {
+                    addch(ch | COLOR_PAIR(CP_GREEN));
+                }
+                else if(inch() == ' ') {
+                    insch(ch | COLOR_PAIR(CP_RED));
+                    addch(ch | COLOR_PAIR(CP_RED));
+                }
+                else {
+                    addch(ch | COLOR_PAIR(CP_RED));
+                }
                 break;
         }
     }
