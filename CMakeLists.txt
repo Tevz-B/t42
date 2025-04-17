@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(t4v2)
+project(t42)
 
 find_package(Curses REQUIRED)
 
@@ -12,7 +12,7 @@ include_directories(${CURSES_INCLUDE_DIR})
 include_directories(src)
 
 add_executable(
-    t4v2
+    t42
     src/main.cpp
 )
 
@@ -24,7 +24,7 @@ add_executable(
     # target_link_libraries(t4 ${CURSES_LIBRARIES})
 # endif()
 
-target_link_libraries(t4v2 ${CURSES_LIBRARIES})
+target_link_libraries(t42 ${CURSES_LIBRARIES})
 
 link_directories(/usr/lib)
 include_directories(/usr/include)

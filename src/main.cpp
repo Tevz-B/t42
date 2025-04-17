@@ -11,16 +11,16 @@
 /*             Globals                                   */
 /*********************************************************/
 
-static int screen_width;
-static int screen_height;
-static int input_line_index;
+static int g_screenWidth;
+static int g_screeHeight;
+static int g_inputLineIndex;
 
 static const char blank_char = '-';
 static const std::string input_line_prefix = "$ :";
 
 using Location = std::pair<int, int>;
 using Words = std::vector<std::pair<Location, std::string>>;
-Words current_words;
+Words g_currentWords;
 
 // Color pairs
 #define CP_RED 1
@@ -37,13 +37,12 @@ Words current_words;
 
 #include <fstream>
 #include <iostream>
-#include <sstream>
 #include <string>
 #include <vector>
 
-std::vector<std::string> words;
+std::vector<std::string> g_words;
 
-std::string wordFromFile() { return words[rand() % words.size()]; }
+std::string wordFromFile() { return g_words[rand() % g_words.size()]; }
 
 bool readWordsFromFile(const char* filename) {
     std::ifstream in(filename, std::ios_base::in);
@@ -51,35 +50,21 @@ bool readWordsFromFile(const char* filename) {
         return false;
     }
 
-    std::string file_contents;
+    g_words.clear();
 
-    std::string line;
-    while(getline(in, line))
-        file_contents.append(line);
-
-    words.clear();
-    std::istringstream iss(file_contents);
     std::string word;
-
     // Extract words separated by whitespace
-    while (iss >> word) {
-        words.push_back(word);
+    while (in >> word) {
+        g_words.push_back(word);
     }
 
     return true;
 }
 
 void setScreenDimensions(int width, int height) {
-    screen_width = width;
-    screen_height = height;
-    input_line_index = screen_height;
-}
-
-std::string newWordOld() {
-    const std::string words[]{"hello", "something", "hi", "goat", "cpp"};
-    const int word_count = 5;
-    const int word_idx = rand() % word_count;
-    return words[word_idx];
+    g_screenWidth = width;
+    g_screeHeight = height;
+    g_inputLineIndex = g_screeHeight;
 }
 
 std::string newGeneratedWord() {
@@ -89,71 +74,6 @@ std::string newGeneratedWord() {
     auto rnd_wrd_suff = words[word_idx];
     auto rnd_wrd_pre = std::to_string(rand() % 1000);
     return rnd_wrd_pre + rnd_wrd_suff;
-}
-
-std::pair<int, int> newWordLocation(int word_length) {
-    int x = rand() % (screen_width - word_length);
-    int y = rand() % (screen_height - 2); // exclude last line (input), and first line (manual)
-    ++y; // exclude first line
-    return {y, x};
-}
-
-auto& addNewWord() { // auto w = new_generated_word();
-    auto w = wordFromFile();
-    auto loc = newWordLocation((int)w.length());
-    current_words.push_back({loc, w});
-    return current_words.back();
-}
-
-void printEmpty() {
-    printw("Press Control-D to exit :^D\n");           // First line
-    for (uint16_t i = 0; i < screen_height - 1; i++) { // The rest
-        printw("%s\n", std::string(screen_width, blank_char).c_str());
-    }
-}
-
-void printWords(std::string& input_line, int& y, int& x) {
-    std::vector<std::string> rm_words;
-    for (const auto& [loc, w] : current_words) {
-        std::regex re(input_line);
-        std::smatch m;
-        if (std::regex_search(w, m, re)) {
-            // full match
-            if (m.prefix().length() == 0 && m.suffix().length() == 0) {
-                y = input_line_index;
-                x = input_line_prefix.length();
-                input_line.clear();
-                rm_words.push_back(w);
-                continue;
-            }
-
-            // partial match
-            int x, y;
-            getyx(stdscr, y, x);
-            move(loc.first, loc.second);
-            printw("%s", m.prefix().str().c_str());
-            attron(COLOR_PAIR(CP_RED));
-            printw("%s", m[0].str().c_str());
-            attroff(COLOR_PAIR(CP_RED));
-            printw("%s", m.suffix().str().c_str());
-            move(x, y);
-            continue;
-        }
-        mvprintw(loc.first, loc.second, "%s", w.c_str());
-    }
-
-    for (const auto& w : rm_words) {
-        // remove typed word
-        current_words.erase(
-            std::remove_if(current_words.begin(), current_words.end(),
-                           [&w](const auto& i) { return i.second == w; }),
-            current_words.end());
-        // current_words.pop_back();
-
-        auto& [loc, word] = addNewWord();
-        // Print new word
-        mvprintw(loc.first, loc.second, "%s", word.c_str());
-    }
 }
 
 /*********************************************************/
@@ -198,7 +118,7 @@ void printUsage(FILE* stream, const char* program) {
             "\n"
             "options:\n"
             "    -h         show this message and exit\n"
-            "    -s         size of window in characters (not pixels): {lines}x{columns}\n"
+            "    -s         size of window in characters (not pixels): {columns}x{lines}\n"
             "    -f         path to words file (default:words.txt)\n"
             "    -r         random seed (int)\n",
             program);
@@ -247,12 +167,36 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    // Behavior:
+    //   - letter starts word type
+    //   - space ends word type, any more spaces do nothing, wait for next letter
+    //   - every wrong letter is colored red / yellow , every letter after end of word as well
+
     while (true) {
         clear(); // Clear the screen
         move(0, 0); // Move cursor
-        attron(COLOR_PAIR(CP_GREEN));
-        printw("%s", "some_word");
-        attroff(COLOR_PAIR(CP_GREEN));
+        // Print words
+        int x = 0;
+        int y = 0;
+        // for (auto& w : g_words) {
+        for (int i = 0; i < 1000 && i < g_words.size(); ++i) {
+            auto& w = g_words[i];
+            x += w.size() + 1;
+            if (x > g_screenWidth) {
+                x = 0;
+                printw("\n");
+                if (++y >= g_screeHeight) {
+                    break;
+                }
+            }
+            printw("%s ", w.data());
+        }
+
+        // attron(COLOR_PAIR(CP_GREEN));
+        // printw("%s", "some_word");
+        // attroff(COLOR_PAIR(CP_GREEN));
+
+        move(0, 0); // Move cursor back to beginning
 
         // Handle Input
         int ch = getch(); // Get user input
@@ -265,16 +209,18 @@ int main(int argc, char** argv) {
             case '\n':
             case '\t':
             case '\r':
+                break;
             case ' ':
                 break;
             // quit (Control-D)
             case 4:
                 goto exitLoop;
             case 23:
+                // clear last word
                 break;
             // other chars
             default:
-                // insert into input line
+                // TODO type
                 break;
         }
     }
