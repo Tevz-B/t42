@@ -1,11 +1,12 @@
 #include <fcntl.h>
 #include <ncurses.h>
-#include <regex>
 #include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <vector>
+
+#include "log.h"
 
 /*********************************************************/
 /*             Globals                                   */
@@ -82,6 +83,7 @@ std::string newGeneratedWord() {
 
 int init() {
     // Init debug log
+    initLog();
 
     if (!readWordsFromFile("words.txt")) {
         printf("Failed to read words file\n");
@@ -179,7 +181,8 @@ int main(int argc, char** argv) {
     int y = 0;
     // for (auto& w : g_words) {
     for (int i = 0; i < 1000 && i < g_words.size(); ++i) {
-        auto& w = g_words[i];
+        // auto& w = g_words[i];
+        auto& w = g_words[rand() % g_words.size()];
         x += w.size() + 1;
         if (x > g_screenWidth) {
             x = 0;
@@ -204,8 +207,11 @@ int main(int argc, char** argv) {
             // backspace
             case KEY_BACKSPACE:
             case 127:
+                getyx(stdscr, y, x);
+                chgat(x, A_NORMAL, 0, nullptr);
+                move(y, --x);
                 break;
-            // whitespace - ignore
+            // other whitespace - ignore
             case '\n':
             case '\t':
             case '\r':
@@ -218,7 +224,7 @@ int main(int argc, char** argv) {
                 // clear last word
                 break;
             case ' ':
-                if (ch == inch()) {
+                if (ch == (inch() & A_CHARTEXT)) {
                     addch(ch | COLOR_PAIR(CP_GREEN));
                 }
                 else {
@@ -229,15 +235,19 @@ int main(int argc, char** argv) {
                 break;
             // other chars
             default:
-                if (ch == inch()) {
+                // LOG( "ch=%d, ch2=%d, inch=%d, inch2=%d", ch, ch, inch(), inch() & A_CHARTEXT );
+                int inchar = (inch() & A_CHARTEXT);
+                if (ch == inchar) {
                     addch(ch | COLOR_PAIR(CP_GREEN));
                 }
-                else if(inch() == ' ') {
+                // If positioned on wrong char - space: insert red chars
+                else if(inchar == ' ') {
                     insch(ch | COLOR_PAIR(CP_RED));
                     addch(ch | COLOR_PAIR(CP_RED));
                 }
+                // If positioned on wrong char and not space
                 else {
-                    addch(ch | COLOR_PAIR(CP_RED));
+                    addch(inchar | COLOR_PAIR(CP_RED));
                 }
                 break;
         }

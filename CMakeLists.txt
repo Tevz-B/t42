@@ -14,6 +14,7 @@ include_directories(src)
 add_executable(
     t42
     src/main.cpp
+    src/log.cpp
 )
 
 
