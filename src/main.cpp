@@ -227,10 +227,12 @@ int main(int argc, char** argv) {
                 if (ch == (inch() & A_CHARTEXT)) {
                     addch(ch | COLOR_PAIR(CP_GREEN));
                 }
-                else {
-                    // TODO: skip until space
-                    // getyx(stdscr, y, x);
-                    // move(y, x + 1);
+                else { // Move until past ' '
+                    getyx(stdscr, y, x);
+                    while((inch() & A_CHARTEXT) != ' ') {
+                        move(y, ++x);
+                    }
+                    move(y, ++x);
                 }
                 break;
             // other chars
