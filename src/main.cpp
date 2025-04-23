@@ -8,6 +8,13 @@
 
 #include "log.h"
 
+
+/**
+ * 1. How to determine when to end?
+ * 2. How to move word to new line?
+ * 3. How to time?
+ */
+
 /*********************************************************/
 /*             Globals                                   */
 /*********************************************************/
@@ -157,8 +164,8 @@ int main(int argc, char** argv) {
         printf("Words filename is empty");
         return 1;
     }
-    if (width < 10 || height < 5) {
-        printf("Window dimensions must be at least 10 x 5");
+    if (width < 1 || height < 1) {
+        printf("Window dimensions must be at least 1 x 1");
         return 1;
     }
     std::srand(rnd_seed);
@@ -183,6 +190,10 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 1000 && i < g_words.size(); ++i) {
         // auto& w = g_words[i];
         auto& w = g_words[rand() % g_words.size()];
+        if ((w.size() + 1) > g_screenWidth) {
+            printf("Word is longer thatn screen width");
+            return 1;
+        }
         x += w.size() + 1;
         if (x > g_screenWidth) {
             x = 0;
