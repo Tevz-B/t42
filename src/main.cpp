@@ -226,6 +226,10 @@ int main(int argc, char** argv) {
             case ' ':
                 if (ch == (inch() & A_CHARTEXT)) {
                     addch(ch | COLOR_PAIR(CP_GREEN));
+                    if ((inch() & A_CHARTEXT) == ' ') {
+                        getyx(stdscr, y, x);
+                        move(++y, 0);
+                    }
                 }
                 else { // Move until past ' '
                     getyx(stdscr, y, x);
