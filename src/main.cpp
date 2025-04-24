@@ -208,35 +208,11 @@ int main(int argc, char** argv) {
 
     move(0, 0); // Move cursor back to beginning
 
-    bool altMode = false;
-
     while(true) {
         // Handle Input
         int ch = getch(); // Get user input
         LOG("keycode = %d", ch);
         switch (ch) {
-            case 8: // alt
-                altMode = true;
-                break;
-
-            // backspace
-            case KEY_BACKSPACE:
-            case 127:
-                if (altMode) {
-                    altMode = false;
-                    getyx(stdscr, y, x);
-                    while ((inch() & A_CHARTEXT) != ' ') {
-                        move(y, --x);
-                        chgat(x, A_NORMAL, 0, nullptr);
-                    }
-                    move(y, ++x);
-                }
-                else {
-                    getyx(stdscr, y, x);
-                    chgat(x, A_NORMAL, 0, nullptr);
-                    move(y, --x);
-                }
-                break;
             // other whitespace - ignore
             case '\n':
             case '\t':
@@ -244,13 +220,49 @@ int main(int argc, char** argv) {
                 break;
             case 4: // Control-D : quit
                 goto exitLoop;
-            case 23: // Ctrl-W : delete word
+            case 8: // alt
                 getyx(stdscr, y, x);
                 while ((inch() & A_CHARTEXT) != ' ') {
                     move(y, --x);
                     chgat(x, A_NORMAL, 0, nullptr);
                 }
                 move(y, ++x);
+                break;
+            // backspace
+            case KEY_BACKSPACE:
+            case 127:
+                getyx(stdscr, y, x);
+                chgat(x, A_NORMAL, 0, nullptr);
+                move(y, --x);
+                break;
+            case 23: {// Ctrl-W : delete word
+                getyx(stdscr, y, x);
+
+                if (x==0) break;
+
+                move(y, --x);
+                chgat(x, A_NORMAL, 0, nullptr);
+
+                for (--x; x >= 0; --x) {
+                    move(y, x);
+                    chgat(x, A_NORMAL, 0, nullptr);
+                    if ((inch() & A_CHARTEXT) == ' ') {
+                        move(y, ++x);
+                        break;
+                    }
+                }
+
+                // bool first = true;
+                // for (--x; x >= 0; --x) {
+                //     move(y, x);
+                //     chgat(x, A_NORMAL, 0, nullptr);
+                //     if ((inch() & A_CHARTEXT) == ' ' && !first) {
+                //         move(y, ++x);
+                //         break;
+                //     }
+                //     first = false;
+                // }
+            }
                 break;
             case ' ':
                 if (ch == (inch() & A_CHARTEXT)) {
@@ -285,10 +297,6 @@ int main(int argc, char** argv) {
                     addch(inchar | COLOR_PAIR(CP_RED));
                 }
                 break;
-        }
-
-        if (altMode && ch != 4) {
-            altMode = false;
         }
     }
 exitLoop:
