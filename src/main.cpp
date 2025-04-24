@@ -23,9 +23,6 @@ static int g_screenWidth;
 static int g_screeHeight;
 static int g_inputLineIndex;
 
-static const char blank_char = '-';
-static const std::string input_line_prefix = "$ :";
-
 using Location = std::pair<int, int>;
 using Words = std::vector<std::pair<Location, std::string>>;
 Words g_currentWords;
@@ -75,14 +72,14 @@ void setScreenDimensions(int width, int height) {
     g_inputLineIndex = g_screeHeight;
 }
 
-std::string newGeneratedWord() {
-    const int word_count = 2;
-    const std::string words[word_count]{"j", "k", /* "up", "down" */};
-    const int word_idx = rand() % word_count;
-    auto rnd_wrd_suff = words[word_idx];
-    auto rnd_wrd_pre = std::to_string(rand() % 1000);
-    return rnd_wrd_pre + rnd_wrd_suff;
-}
+// std::string newGeneratedWord() {
+//     const int word_count = 2;
+//     const std::string words[word_count]{"j", "k", /* "up", "down" */};
+//     const int word_idx = rand() % word_count;
+//     auto rnd_wrd_suff = words[word_idx];
+//     auto rnd_wrd_pre = std::to_string(rand() % 1000);
+//     return rnd_wrd_pre + rnd_wrd_suff;
+// }
 
 /*********************************************************/
 /*             Main                                      */
@@ -231,8 +228,12 @@ int main(int argc, char** argv) {
             case 4:
                 goto exitLoop;
             case 23:
-                printw("TODO:clearword");
-                // clear last word
+                getyx(stdscr, y, x);
+                while ((inch() & A_CHARTEXT) != ' ') {
+                    move(y, --x);
+                    chgat(x, A_NORMAL, 0, nullptr);
+                }
+                move(y, ++x);
                 break;
             case ' ':
                 if (ch == (inch() & A_CHARTEXT)) {
