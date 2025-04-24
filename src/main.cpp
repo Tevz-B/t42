@@ -208,26 +208,43 @@ int main(int argc, char** argv) {
 
     move(0, 0); // Move cursor back to beginning
 
+    bool altMode = false;
+
     while(true) {
         // Handle Input
         int ch = getch(); // Get user input
+        LOG("keycode = %d", ch);
         switch (ch) {
+            case 8: // alt
+                altMode = true;
+                break;
+
             // backspace
             case KEY_BACKSPACE:
             case 127:
-                getyx(stdscr, y, x);
-                chgat(x, A_NORMAL, 0, nullptr);
-                move(y, --x);
+                if (altMode) {
+                    altMode = false;
+                    getyx(stdscr, y, x);
+                    while ((inch() & A_CHARTEXT) != ' ') {
+                        move(y, --x);
+                        chgat(x, A_NORMAL, 0, nullptr);
+                    }
+                    move(y, ++x);
+                }
+                else {
+                    getyx(stdscr, y, x);
+                    chgat(x, A_NORMAL, 0, nullptr);
+                    move(y, --x);
+                }
                 break;
             // other whitespace - ignore
             case '\n':
             case '\t':
             case '\r':
                 break;
-            // quit (Control-D)
-            case 4:
+            case 4: // Control-D : quit
                 goto exitLoop;
-            case 23:
+            case 23: // Ctrl-W : delete word
                 getyx(stdscr, y, x);
                 while ((inch() & A_CHARTEXT) != ' ') {
                     move(y, --x);
@@ -268,6 +285,10 @@ int main(int argc, char** argv) {
                     addch(inchar | COLOR_PAIR(CP_RED));
                 }
                 break;
+        }
+
+        if (altMode && ch != 4) {
+            altMode = false;
         }
     }
 exitLoop:
