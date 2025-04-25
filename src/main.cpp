@@ -220,14 +220,24 @@ int main(int argc, char** argv) {
                 break;
             case 4: // Control-D : quit
                 goto exitLoop;
-            case 8: // alt
+            case 27: { // alt
                 getyx(stdscr, y, x);
-                while ((inch() & A_CHARTEXT) != ' ') {
-                    move(y, --x);
+
+                if (x==0) break;
+
+                move(y, --x);
+                chgat(x, A_NORMAL, 0, nullptr);
+
+                for (--x; x >= 0; --x) {
+                    move(y, x);
                     chgat(x, A_NORMAL, 0, nullptr);
+                    if ((inch() & A_CHARTEXT) == ' ') {
+                        move(y, ++x);
+                        break;
+                    }
                 }
-                move(y, ++x);
                 break;
+            }
             // backspace
             case KEY_BACKSPACE:
             case 127:
@@ -251,19 +261,8 @@ int main(int argc, char** argv) {
                         break;
                     }
                 }
-
-                // bool first = true;
-                // for (--x; x >= 0; --x) {
-                //     move(y, x);
-                //     chgat(x, A_NORMAL, 0, nullptr);
-                //     if ((inch() & A_CHARTEXT) == ' ' && !first) {
-                //         move(y, ++x);
-                //         break;
-                //     }
-                //     first = false;
-                // }
-            }
                 break;
+            }
             case ' ':
                 if (ch == (inch() & A_CHARTEXT)) {
                     addch(ch | COLOR_PAIR(CP_GREEN));
