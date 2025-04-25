@@ -208,9 +208,18 @@ int main(int argc, char** argv) {
 
     move(0, 0); // Move cursor back to beginning
 
+    time_t limit = 10000;
+    time_t start = clock();
+
     while(true) {
+        time_t diff = clock() - start;
+
         int ch = getch(); // Get user input
-        LOG("keycode = %d", ch);
+        LOG("keycode = %d, time: %zu", ch, diff);
+        if( diff > limit ) {
+            // TODO: dont exit but print finished and stats
+            goto exitLoop;
+        }
         switch (ch) {
             case 4: // Control-D : quit
                 goto exitLoop;
