@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
     std::string filename = "words.txt";
     int rnd_seed = 42;
     int width = 60;
-    int height = 40;
+    int height = 5;
 
     for (int opt; (opt = getopt(argc, argv, "hs:f:r:")) != -1;) {
         switch (opt) {
@@ -209,43 +209,30 @@ int main(int argc, char** argv) {
     move(0, 0); // Move cursor back to beginning
 
     while(true) {
-        // Handle Input
         int ch = getch(); // Get user input
         LOG("keycode = %d", ch);
         switch (ch) {
-            // other whitespace - ignore
+            case 4: // Control-D : quit
+                goto exitLoop;
+
+            // Whitespace (except space) : ignore
             case '\n':
             case '\t':
             case '\r':
                 break;
-            case 4: // Control-D : quit
-                goto exitLoop;
-            case 27: { // alt
-                getyx(stdscr, y, x);
 
-                if (x==0) break;
-
-                move(y, --x);
-                chgat(x, A_NORMAL, 0, nullptr);
-
-                for (--x; x >= 0; --x) {
-                    move(y, x);
-                    chgat(x, A_NORMAL, 0, nullptr);
-                    if ((inch() & A_CHARTEXT) == ' ') {
-                        move(y, ++x);
-                        break;
-                    }
-                }
-                break;
-            }
-            // backspace
+            // Backspace : delete char
             case KEY_BACKSPACE:
             case 127:
                 getyx(stdscr, y, x);
                 chgat(x, A_NORMAL, 0, nullptr);
                 move(y, --x);
                 break;
-            case 23: {// Ctrl-W : delete word
+
+
+            // C-W, C-BS : delete word
+            case 27:   // Ctrl-BS
+            case 23: { // Ctrl-W : delete word
                 getyx(stdscr, y, x);
 
                 if (x==0) break;
@@ -263,6 +250,8 @@ int main(int argc, char** argv) {
                 }
                 break;
             }
+
+            // Space : move to next word
             case ' ':
                 if (ch == (inch() & A_CHARTEXT)) {
                     addch(ch | COLOR_PAIR(CP_GREEN));
@@ -279,7 +268,7 @@ int main(int argc, char** argv) {
                     move(y, ++x);
                 }
                 break;
-            // other chars
+            // Letters (and other) : check correctness
             default:
                 // LOG( "ch=%d, ch2=%d, inch=%d, inch2=%d", ch, ch, inch(), inch() & A_CHARTEXT );
                 int inchar = (inch() & A_CHARTEXT);
