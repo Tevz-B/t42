@@ -5,6 +5,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <vector>
+#include <thread>
+#include <atomic>
 
 #include "log.h"
 
@@ -35,6 +37,7 @@ static int g_inputLineIndex;
 #include <vector>
 
 std::vector<std::string> g_words;
+std::atomic<bool> g_timeUp;
 
 std::string wordFromFile() { return g_words[rand() % g_words.size()]; }
 
@@ -112,13 +115,18 @@ void printUsage(FILE* stream, const char* program) {
     // clang-format on
 }
 
+void timerFunc(int secs) {
+    sleep(secs);
+    g_timeUp = true;
+}
+
 int main(int argc, char** argv) {
     std::string size_str;
     std::string filename = "words.txt";
     std::srand(clock());
     int width = 60;
     int height = 5;
-    time_t timeLimit = 15000;
+    int timeLimit = 15;
 
     for (int opt; (opt = getopt(argc, argv, "hs:f:r:t:")) != -1;) {
         switch (opt) {
@@ -140,7 +148,7 @@ int main(int argc, char** argv) {
             case 't': {
                 long num = atol(optarg);
                 if (num > 0) {
-                    timeLimit = num * 1000;
+                    timeLimit = num;
                 }
                 continue;
             }
@@ -171,7 +179,6 @@ int main(int argc, char** argv) {
     // Print words
     int x = 0;
     int y = 0;
-    // for (auto& w : g_words) {
     for (int i = 0; i < 1000 && i < g_words.size(); ++i) {
         // auto& w = g_words[i];
         auto& w = g_words[rand() % g_words.size()];
@@ -192,19 +199,25 @@ int main(int argc, char** argv) {
 
     move(0, 0); // Move cursor back to beginning
 
-    time_t start = clock();
+    std::thread timerThread;
 
-    // long allCharCount = 0;
-    long correctCharCount = 0;
+    int correctCharCount = 0;
+    bool firstLoop = true;
 
     while(true) {
-        time_t diff = clock() - start;
 
         int ch = getch(); // Get user input
-        LOG("keycode = %d, time: %zu", ch, diff);
-        if( diff > timeLimit ) {
-            goto endTest;
+
+        if (firstLoop) {
+            // Start timer
+            g_timeUp = false;
+            timerThread = std::thread(timerFunc, timeLimit);
+            firstLoop = false;
         }
+
+        if (g_timeUp) goto endTest;
+
+        LOG("keycode = %d", ch);
         switch (ch) {
             case 4: // Control-D : quit
                 goto exitLoop;
@@ -254,7 +267,9 @@ int main(int argc, char** argv) {
                         getyx(stdscr, y, x);
                         move(++y, 0);
                         if (inch() == ' ') {
-                            goto endTest;
+                            // goto endTest;
+                            // TODO: handle no text
+                            goto exitLoop;
                         }
                     }
                 }
@@ -289,12 +304,10 @@ int main(int argc, char** argv) {
 
 endTest: {
         clear();
-        time_t diff = clock() - start;
-        float wpm = correctCharCount * (60000.0 / diff) / 5;
+        float wpm = correctCharCount * (60.0 / timeLimit) / 5;
         LOG("wpm:%f", wpm);
-        LOG("time:%zu", diff);
-        printw("Time used: %.2fs\n"
-               "Words per minute: %.1f\n", diff/1000.0, wpm );
+        printw("Time used: %ds\n"
+               "Words per minute: %.1f\n", timeLimit, wpm );
         refresh();
         sleep(2);
         printw("Press anything to exit");
@@ -303,6 +316,7 @@ endTest: {
     }
 
 exitLoop:
+    timerThread.join();
     endwin();
 
     return 0;

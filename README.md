@@ -18,7 +18,7 @@ run `./build/t42`
 
   - `-h` : help
   - `-s` : size - set window size (default: `-s60x5`)
-  - `-f` : words file location (default: `words.txt`)
+  - `-f` : words file where words will be split by whitespace (default: `words.txt`)
   - `-t` : time limit in seconds (default: `15`)
   - `-r` : random seed
 
