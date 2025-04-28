@@ -10,7 +10,9 @@
 
 ## Run
 
+The binary needs a list of words. By default it looks for `words.txt` file, which you can provide with `-f` flag.
 run `./build/t42`
+
 
 ## Options
 
@@ -21,4 +23,3 @@ run `./build/t42`
   - `-r` : random seed
 
 
-Provide a set of words you want to practice in `words.txt` and get typing!
