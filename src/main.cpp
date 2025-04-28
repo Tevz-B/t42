@@ -8,19 +8,12 @@
 
 #include "log.h"
 
-
-/**
- * 1. How to determine when to end?
- * 2. How to move word to new line?
- * 3. How to time?
- */
-
 /*********************************************************/
 /*             Globals                                   */
 /*********************************************************/
 
 static int g_screenWidth;
-static int g_screeHeight;
+static int g_screenHeight;
 static int g_inputLineIndex;
 
 using Location = std::pair<int, int>;
@@ -68,8 +61,8 @@ bool readWordsFromFile(const char* filename) {
 
 void setScreenDimensions(int width, int height) {
     g_screenWidth = width;
-    g_screeHeight = height;
-    g_inputLineIndex = g_screeHeight;
+    g_screenHeight = height;
+    g_inputLineIndex = g_screenHeight;
 }
 
 // std::string newGeneratedWord() {
@@ -126,6 +119,7 @@ void printUsage(FILE* stream, const char* program) {
             "    -h         show this message and exit\n"
             "    -s         size of window in characters (not pixels): {columns}x{lines}\n"
             "    -f         path to words file (default:words.txt)\n"
+            "    -t         time limit in seconds (int)\n"
             "    -r         random seed (int)\n",
             program);
     // clang-format on
@@ -137,8 +131,9 @@ int main(int argc, char** argv) {
     int rnd_seed = 42;
     int width = 60;
     int height = 5;
+    time_t timeLimit = 15000;
 
-    for (int opt; (opt = getopt(argc, argv, "hs:f:r:")) != -1;) {
+    for (int opt; (opt = getopt(argc, argv, "hs:f:r:t:")) != -1;) {
         switch (opt) {
             case 'h':
                 return printUsage(stdout, argv[0]), 0;
@@ -155,6 +150,13 @@ int main(int argc, char** argv) {
             case 'r':
                 rnd_seed = atoi(optarg);
                 continue;
+            case 't': {
+                long num = atol(optarg);
+                if (num > 0) {
+                    timeLimit = num * 1000;
+                }
+                continue;
+            }
         }
     }
     if (filename.empty()) {
@@ -188,37 +190,34 @@ int main(int argc, char** argv) {
         // auto& w = g_words[i];
         auto& w = g_words[rand() % g_words.size()];
         if ((w.size() + 1) > g_screenWidth) {
-            printf("Word is longer thatn screen width");
+            printf("Word is longer than screen width");
             return 1;
         }
         x += w.size() + 1;
         if (x > g_screenWidth) {
             x = 0;
             printw("\n");
-            if (++y >= g_screeHeight) {
+            if (++y >= g_screenHeight) {
                 break;
             }
         }
         printw("%s ", w.data());
     }
 
-    // attron(COLOR_PAIR(CP_GREEN));
-    // printw("%s", "some_word");
-    // attroff(COLOR_PAIR(CP_GREEN));
-
     move(0, 0); // Move cursor back to beginning
 
-    time_t limit = 10000;
     time_t start = clock();
+
+    // long allCharCount = 0;
+    long correctCharCount = 0;
 
     while(true) {
         time_t diff = clock() - start;
 
         int ch = getch(); // Get user input
         LOG("keycode = %d, time: %zu", ch, diff);
-        if( diff > limit ) {
-            // TODO: dont exit but print finished and stats
-            goto exitLoop;
+        if( diff > timeLimit ) {
+            goto endTest;
         }
         switch (ch) {
             case 4: // Control-D : quit
@@ -264,9 +263,13 @@ int main(int argc, char** argv) {
             case ' ':
                 if (ch == (inch() & A_CHARTEXT)) {
                     addch(ch | COLOR_PAIR(CP_GREEN));
+                    correctCharCount++;
                     if ((inch() & A_CHARTEXT) == ' ') {
                         getyx(stdscr, y, x);
                         move(++y, 0);
+                        if (inch() == ' ') {
+                            goto endTest;
+                        }
                     }
                 }
                 else { // Move until past ' '
@@ -283,6 +286,7 @@ int main(int argc, char** argv) {
                 int inchar = (inch() & A_CHARTEXT);
                 if (ch == inchar) {
                     addch(ch | COLOR_PAIR(CP_GREEN));
+                    correctCharCount++;
                 }
                 // If positioned on wrong char - space: insert red chars
                 else if(inchar == ' ') {
@@ -296,6 +300,22 @@ int main(int argc, char** argv) {
                 break;
         }
     }
+
+endTest: {
+        clear();
+        time_t diff = clock() - start;
+        float wpm = correctCharCount * (60000.0 / diff) / 5;
+        LOG("wpm:%f", wpm);
+        LOG("time:%zu", diff);
+        printw("Time used: %.2fs\n"
+               "Words per minute: %.1f\n", diff/1000.0, wpm );
+        refresh();
+        sleep(2);
+        printw("Press anything to exit");
+        flushinp();
+        getch();
+    }
+
 exitLoop:
 
     // Clean up
