@@ -115,7 +115,7 @@ void printUsage(FILE* stream, const char* program) {
 int main(int argc, char** argv) {
     std::string size_str;
     std::string filename = "words.txt";
-    int rnd_seed = 42;
+    std::srand(clock());
     int width = 60;
     int height = 5;
     time_t timeLimit = 15000;
@@ -135,7 +135,7 @@ int main(int argc, char** argv) {
                 filename = optarg;
                 continue;
             case 'r':
-                rnd_seed = atoi(optarg);
+                std::srand(atoi(optarg));
                 continue;
             case 't': {
                 long num = atol(optarg);
@@ -154,7 +154,6 @@ int main(int argc, char** argv) {
         printf("Window dimensions must be at least 1 x 1");
         return 1;
     }
-    std::srand(rnd_seed);
     setScreenDimensions(width, height);
 
     if (init()) {
