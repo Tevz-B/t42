@@ -16,10 +16,6 @@ static int g_screenWidth;
 static int g_screenHeight;
 static int g_inputLineIndex;
 
-using Location = std::pair<int, int>;
-using Words = std::vector<std::pair<Location, std::string>>;
-Words g_currentWords;
-
 // Color pairs
 #define CP_RED 1
 #define CP_BLUE 2
@@ -64,15 +60,6 @@ void setScreenDimensions(int width, int height) {
     g_screenHeight = height;
     g_inputLineIndex = g_screenHeight;
 }
-
-// std::string newGeneratedWord() {
-//     const int word_count = 2;
-//     const std::string words[word_count]{"j", "k", /* "up", "down" */};
-//     const int word_idx = rand() % word_count;
-//     auto rnd_wrd_suff = words[word_idx];
-//     auto rnd_wrd_pre = std::to_string(rand() % 1000);
-//     return rnd_wrd_pre + rnd_wrd_suff;
-// }
 
 /*********************************************************/
 /*             Main                                      */
@@ -317,8 +304,6 @@ endTest: {
     }
 
 exitLoop:
-
-    // Clean up
     endwin();
 
     return 0;
